@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prompt Sharpener — Sharper AI prompts in one tap</title>
+<meta name="description" content="Prompt Sharpener adds proven instruction phrases to the beginning or end of any AI chat box — Claude, ChatGPT, Gemini, Copilot, Perplexity & more. One tap or one hotkey. No account, fully private." />
+<style>
+  :root{
+    --accent:#4f46e5; --accent2:#7c7bf5; --fg:#1f2328; --muted:#6b7280;
+    --border:#e6e7eb; --bg:#ffffff; --page:#f4f5fb; --ok:#059669;
+    --maxw:1160px; --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--fg); background:var(--page); line-height:1.5;
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%}
+
+  /* ---- Chrome roundel (CSS mark, evokes the Chrome logo) ---- */
+  .chrome{width:22px;height:22px;border-radius:50%;position:relative;flex:0 0 auto;
+    background:conic-gradient(from -90deg,#ea4335 0 120deg,#34a853 120deg 240deg,#fbbc05 240deg 360deg)}
+  .chrome::before{content:"";position:absolute;inset:5px;border-radius:50%;background:#fff}
+  .chrome::after{content:"";position:absolute;inset:7px;border-radius:50%;background:#4285f4}
+
+  /* ---- Buttons ---- */
+  .btn{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:16px;
+    padding:13px 22px;border-radius:12px;border:1px solid transparent;cursor:pointer;transition:.15s}
+  .btn.primary{background:var(--accent);color:#fff;box-shadow:0 10px 24px rgba(79,70,229,.30)}
+  .btn.primary:hover{filter:brightness(1.07);transform:translateY(-1px)}
+  .btn.ghost{background:#fff;color:var(--fg);border-color:var(--border)}
+  .btn.ghost:hover{background:#f7f8fc}
+  .btn.sm{font-size:14px;padding:9px 15px}
+
+  /* ---- Header (persistent) ---- */
+  header.site{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);
+    backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--border)}
+  .nav{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;gap:14px;
+    padding:14px 24px}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:19px;letter-spacing:-.4px}
+  .brand .logo{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 6px 16px rgba(79,70,229,.35)}
+  .brand .logo svg{width:22px;height:22px}
+  .nav .spacer{flex:1}
+  .nav .links{display:flex;gap:22px;font-weight:600;color:var(--muted);font-size:15px}
+  .nav .links a:hover{color:var(--fg)}
+
+  /* ---- Hero carousel ---- */
+  .hero{max-width:var(--maxw);margin:0 auto;padding:26px 24px 8px;position:relative}
+  .stage{position:relative;overflow:hidden;border-radius:22px;border:1px solid var(--border);
+    background:
+      radial-gradient(1000px 560px at 88% -12%,#ece9fe 0%,rgba(236,233,254,0) 60%),
+      radial-gradient(760px 520px at -6% 116%,#e8ecfb 0%,rgba(232,236,251,0) 55%),
+      #fbfbff;
+    box-shadow:0 24px 60px rgba(30,32,60,.10)}
+  .track{display:flex;transition:transform .55s cubic-bezier(.4,.0,.2,1);will-change:transform}
+  .panel{flex:0 0 100%;min-height:520px;display:grid;grid-template-columns:1.05fr 1fr;
+    gap:34px;align-items:center;padding:52px 56px}
+  .panel.solo{grid-template-columns:1fr;justify-items:start}
+  .p-head h2{font-size:44px;line-height:1.05;letter-spacing:-1.3px;font-weight:800;max-width:520px}
+  .p-head h2 .hl{color:var(--accent)}
+  .p-head p{margin-top:16px;font-size:20px;color:var(--muted);max-width:460px;font-weight:500}
+  .p-note{margin-top:22px;font-size:15px;color:var(--fg);font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .k{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;font-weight:700;
+    background:#fff;border:1px solid var(--border);border-bottom-width:3px;border-radius:6px;padding:2px 8px;color:var(--accent)}
+  .p-mock{display:flex;justify-content:center}
+
+  /* carousel controls */
+  .arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:44px;height:44px;border-radius:50%;
+    background:#fff;border:1px solid var(--border);box-shadow:0 6px 18px rgba(30,32,60,.14);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:var(--fg)}
+  .arrow:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .arrow.prev{left:14px}.arrow.next{right:14px}
+  .dots{display:flex;justify-content:center;gap:10px;margin-top:16px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#cfd2e0;border:none;cursor:pointer;transition:.2s}
+  .dot.active{background:var(--accent);width:26px;border-radius:6px}
+
+  /* ---- Mock UI (from the extension itself) ---- */
+  .popup{width:380px;background:#fff;border:1px solid var(--border);border-radius:16px;
+    box-shadow:0 24px 54px rgba(30,32,60,.20);overflow:hidden;text-align:left}
+  .popup .pbar{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid var(--border)}
+  .popup .ptitle{font-weight:700;font-size:15px}.popup .pedit{color:var(--accent);font-weight:700;font-size:13px}
+  .popup .psearch{padding:11px 15px 5px}
+  .popup .psearch div{padding:9px 11px;font-size:13px;color:var(--muted);border:1px solid var(--border);border-radius:9px}
+  .popup .plist{padding:4px 9px 11px}
+  .popup .item{display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:9px}
+  .popup .item.hot{background:#f5f6fb}
+  .popup .item .main{flex:1;min-width:0}
+  .popup .item .label{font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:8px}
+  .popup .item .label .chip{margin-left:auto;font-size:10px;font-weight:800;color:#fff;background:var(--accent);padding:2px 6px;border-radius:5px;white-space:nowrap}
+  .popup .item .text{margin-top:2px;font-size:11.5px;line-height:1.35;color:var(--muted)}
+  .popup .item .btns{display:flex;gap:5px}
+  .popup .item .btns b{width:28px;height:28px;border:1px solid var(--border);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;background:#fff}
+  .popup .item .btns b.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .chat{width:100%;max-width:560px;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 24px 54px rgba(30,32,60,.16);overflow:hidden;text-align:left}
+  .chat .chead{padding:12px 18px;border-bottom:1px solid var(--border);color:var(--muted);font-size:13px;font-weight:600;display:flex;align-items:center;gap:9px}
+  .chat .cdot{width:9px;height:9px;border-radius:50%;background:#d97706}
+  .chat .cbody{padding:20px;font-size:16px;line-height:1.5;min-height:120px}
+  .chat .cbody .ins{background:#eceafe;color:#3d34c9;border-radius:5px;padding:1px 4px;box-shadow:inset 0 0 0 1px #d9d4fb}
+  .chat .cbar{display:flex;align-items:center;gap:10px;padding:12px 20px 18px}
+  .chat .cbar span{font-size:13px;color:var(--muted);margin-right:auto}
+  .chat .cbar .send{background:var(--accent);color:#fff;font-weight:700;padding:9px 18px;border-radius:9px;font-size:14px}
+
+  .editor{width:100%;max-width:940px;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 24px 54px rgba(30,32,60,.16);overflow:hidden;text-align:left}
+  .editor .ehead{padding:16px 22px 6px;font-size:17px;font-weight:800}
+  .erow{display:grid;grid-template-columns:20px 108px 150px 1fr 30px;gap:12px;align-items:start;padding:11px 22px;border-top:1px solid var(--border)}
+  .erow .grip{color:#c3c6d4;font-size:16px;padding-top:8px}
+  .badge{font-size:11px;font-weight:800;color:#fff;background:var(--accent);border-radius:6px;padding:6px 8px;text-align:center;white-space:nowrap}
+  .badge.none{background:transparent;color:#c3c6d4}
+  .fld{border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;background:#fbfbfd}
+  .fld.ta{min-height:46px;color:#555;line-height:1.35}
+  .del{width:30px;height:30px;border:1px solid var(--border);border-radius:7px;color:#dc2626;display:flex;align-items:center;justify-content:center}
+
+  .badges3{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .badges3 .p{background:#fff;border:1px solid var(--border);border-radius:999px;padding:8px 15px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+  .badges3 .p .tick{color:var(--ok);font-weight:900}
+  .sites-mini{display:flex;flex-wrap:wrap;gap:12px;max-width:460px}
+  .sites-mini .s{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border);border-radius:11px;padding:10px 14px;font-weight:700;font-size:14px;box-shadow:0 5px 14px rgba(30,32,60,.05)}
+  .sites-mini .s .d{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800}
+
+  /* ---- Content sections ---- */
+  section.block{max-width:var(--maxw);margin:0 auto;padding:64px 24px}
+  .sec-head{text-align:center;max-width:720px;margin:0 auto 40px}
+  .sec-head h3{font-size:34px;letter-spacing:-1px;font-weight:800}
+  .sec-head p{margin-top:12px;font-size:18px;color:var(--muted)}
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:26px;box-shadow:0 8px 22px rgba(30,32,60,.05)}
+  .card .ico{width:44px;height:44px;border-radius:11px;background:#eef0fe;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px}
+  .card h4{font-size:18px;margin-bottom:7px}
+  .card p{color:var(--muted);font-size:15px}
+
+  .sites-full{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+  .sites-full .s{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);border-radius:13px;padding:13px 18px;font-weight:700;font-size:16px;box-shadow:0 6px 16px rgba(30,32,60,.06)}
+  .sites-full .s .d{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .step{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:26px;position:relative}
+  .step .n{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .step h4{font-size:18px;margin-bottom:6px}.step p{color:var(--muted);font-size:15px}
+
+  .cta{max-width:var(--maxw);margin:0 auto 70px;padding:0 24px}
+  .cta .inner{background:linear-gradient(135deg,var(--accent),#6d5cf6);border-radius:24px;padding:56px 40px;text-align:center;color:#fff;box-shadow:0 26px 60px rgba(79,70,229,.35)}
+  .cta h3{font-size:34px;letter-spacing:-1px;font-weight:800}
+  .cta p{margin:12px auto 26px;font-size:18px;opacity:.92;max-width:560px}
+  .cta .btn.primary{background:#fff;color:var(--accent);box-shadow:0 12px 26px rgba(0,0,0,.18)}
+
+  footer.site{border-top:1px solid var(--border);background:#fff}
+  .foot{max-width:var(--maxw);margin:0 auto;padding:34px 24px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;color:var(--muted);font-size:14px}
+  .foot .spacer{flex:1}
+  .foot a{color:var(--accent);font-weight:600}
+  .foot .fine{width:100%;font-size:12.5px;color:#9aa0ad;border-top:1px solid var(--border);padding-top:16px;margin-top:6px}
+
+  /* ---- Responsive ---- */
+  @media (max-width:900px){
+    .panel{grid-template-columns:1fr;padding:34px 26px;min-height:0;gap:24px}
+    .p-mock{justify-content:flex-start;width:100%}
+    .p-head h2{font-size:30px}.p-head p{font-size:16px}
+    .nav .links{display:none}
+    .features,.steps{grid-template-columns:1fr}
+    .arrow{display:none}
+    /* Make the embedded UI mocks fluid so nothing overflows the viewport */
+    .popup,.chat,.editor{width:100%;max-width:100%}
+    .editor{overflow-x:auto}
+    .brand{font-size:17px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .track{transition:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER (persistent) ============ -->
+<header class="site">
+  <div class="nav">
+    <a class="brand" href="#top">
+      <span class="logo"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></span>
+      Prompt Sharpener
+    </a>
+    <div class="spacer"></div>
+    <nav class="links">
+      <a href="#features">Features</a>
+      <a href="#sites">Works with</a>
+      <a href="#how">How it works</a>
+    </nav>
+    <a class="btn primary sm" id="cta-nav" href="#" target="_blank" rel="noopener">
+      <span class="chrome"></span> Add to Chrome
+    </a>
+  </div>
+</header>
+
+<span id="top"></span>
+
+<!-- ============ HERO CAROUSEL (sliding panels) ============ -->
+<div class="hero">
+  <div class="stage" id="stage">
+    <div class="track" id="track">
+
+      <!-- Panel 1 -->
+      <section class="panel">
+        <div class="p-head">
+          <h2>Sharper prompts, better answers — <span class="hl">in one tap.</span></h2>
+          <p>Add proven instruction phrases to any AI chat. No rewriting, no account, fully private.</p>
+          <a class="btn primary cta-link" href="#" target="_blank" rel="noopener" style="margin-top:24px"><span class="chrome"></span> Add to Chrome</a>
+        </div>
+        <div class="p-mock">
+          <div class="popup">
+            <div class="pbar"><span class="ptitle">Prompt Sharpener</span><span class="pedit">Edit</span></div>
+            <div class="psearch"><div>Search phrases…</div></div>
+            <div class="plist">
+              <div class="item hot"><div class="main"><div class="label">Clarify or proceed<span class="chip">Alt+Shift+1</span></div><div class="text">Before answering, list only the essential missing information…</div></div><div class="btns"><b>↑</b><b class="on">↓</b></div></div>
+              <div class="item"><div class="main"><div class="label">Reasoning summary<span class="chip">Alt+Shift+2</span></div><div class="text">Give a brief explanation of the logic behind your answer…</div></div><div class="btns"><b>↑</b><b>↓</b></div></div>
+              <div class="item"><div class="main"><div class="label">Flag uncertainty<span class="chip">Alt+Shift+3</span></div><div class="text">If any part of the answer is uncertain, label it clearly…</div></div><div class="btns"><b>↑</b><b>↓</b></div></div>
+              <div class="item"><div class="main"><div class="label">Cite and verify</div><div class="text">Where factual claims matter, cite reliable sources…</div></div><div class="btns"><b>↑</b><b>↓</b></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 2 -->
+      <section class="panel">
+        <div class="p-head">
+          <h2>One tap, or <span class="hl">one keystroke.</span></h2>
+          <p>Pick a phrase from the popup — or fire your top four with a hotkey, without leaving the keyboard.</p>
+          <div class="p-note">Fire favorites with <span class="k">Alt</span><span class="k">Shift</span><span class="k">1</span> … <span class="k">4</span></div>
+        </div>
+        <div class="p-mock">
+          <div class="popup">
+            <div class="pbar"><span class="ptitle">Prompt Sharpener</span><span class="pedit">Edit</span></div>
+            <div class="psearch"><div>Search phrases…</div></div>
+            <div class="plist">
+              <div class="item"><div class="main"><div class="label">Clarify or proceed<span class="chip">Alt+Shift+1</span></div><div class="text">Before answering, list only the essential missing information…</div></div><div class="btns"><b>↑</b><b>↓</b></div></div>
+              <div class="item hot"><div class="main"><div class="label">Reasoning summary<span class="chip">Alt+Shift+2</span></div><div class="text">Give a brief explanation of the logic behind your answer…</div></div><div class="btns"><b>↑</b><b class="on">↓</b></div></div>
+              <div class="item"><div class="main"><div class="label">Flag uncertainty<span class="chip">Alt+Shift+3</span></div><div class="text">If any part of the answer is uncertain, label it clearly…</div></div><div class="btns"><b>↑</b><b>↓</b></div></div>
+              <div class="item"><div class="main"><div class="label">Concise action plan<span class="chip">Alt+Shift+4</span></div><div class="text">Keep the answer concise. End with the practical next steps…</div></div><div class="btns"><b>↑</b><b>↓</b></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 3 -->
+      <section class="panel">
+        <div class="p-head">
+          <h2>Beginning <span class="hl">or</span> end. Your choice.</h2>
+          <p>Drop a phrase at the top of your prompt or tack it on at the end — right in the chat box you already use.</p>
+          <div class="p-note">Insert with the <span class="k">↑</span> / <span class="k">↓</span> buttons or a hotkey — each phrase on its own line.</div>
+        </div>
+        <div class="p-mock">
+          <div class="chat">
+            <div class="chead"><span class="cdot"></span> New chat</div>
+            <div class="cbody">Summarize the tradeoffs between REST and GraphQL for our mobile app.<br><span class="ins">If any part of the answer is uncertain, label it clearly, explain what would verify it, and do not fill gaps with made-up specifics.</span></div>
+            <div class="cbar"><span>Inserted at end ✓</span><span class="send">Send</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 4 -->
+      <section class="panel solo">
+        <div class="p-head">
+          <h2>Make it <span class="hl">yours.</span></h2>
+          <p>Add, edit, reorder, and label your own phrases in a built-in editor. Import or export as JSON to back up or share.</p>
+        </div>
+        <div class="p-mock" style="width:100%">
+          <div class="editor">
+            <div class="ehead">Phrases</div>
+            <div class="erow"><div class="grip">⠿</div><div class="badge">Alt+Shift+1</div><div class="fld">Clarify or proceed</div><div class="fld ta">Before answering, list only the essential missing information. If you can reasonably proceed, state your assumptions and answer anyway.</div><div class="del">✕</div></div>
+            <div class="erow"><div class="grip">⠿</div><div class="badge">Alt+Shift+2</div><div class="fld">Reasoning summary</div><div class="fld ta">Give a brief explanation of the logic behind your answer, focusing on key assumptions, tradeoffs, and checks.</div><div class="del">✕</div></div>
+            <div class="erow"><div class="grip">⠿</div><div class="badge none">—</div><div class="fld">Cite and verify</div><div class="fld ta">Where factual claims matter, cite reliable sources. If a claim cannot be verified, say so.</div><div class="del">✕</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 5 -->
+      <section class="panel">
+        <div class="p-head">
+          <h2>Private by <span class="hl">design.</span></h2>
+          <p>No account. No servers. No AI calls. Your phrases never leave your browser and sync across your own Chrome profile.</p>
+          <div class="badges3">
+            <span class="p"><span class="tick">✓</span> No account</span>
+            <span class="p"><span class="tick">✓</span> No data sent</span>
+            <span class="p"><span class="tick">✓</span> Open &amp; free</span>
+          </div>
+        </div>
+        <div class="p-mock">
+          <div class="sites-mini">
+            <span class="s"><span class="d" style="background:#d97757">C</span> Claude</span>
+            <span class="s"><span class="d" style="background:#10a37f">G</span> ChatGPT</span>
+            <span class="s"><span class="d" style="background:#4285f4">✦</span> Gemini</span>
+            <span class="s"><span class="d" style="background:#0a7cff">◆</span> Copilot</span>
+            <span class="s"><span class="d" style="background:#20808d">P</span> Perplexity</span>
+            <span class="s"><span class="d" style="background:#111">✕</span> Grok</span>
+            <span class="s"><span class="d" style="background:#4d6bfe">D</span> DeepSeek</span>
+            <span class="s"><span class="d" style="background:#fa520f">M</span> Mistral</span>
+            <span class="s"><span class="d" style="background:#5a3fd6">P</span> Poe</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+    <button class="arrow prev" id="prev" aria-label="Previous">‹</button>
+    <button class="arrow next" id="next" aria-label="Next">›</button>
+  </div>
+  <div class="dots" id="dots"></div>
+</div>
+
+<!-- ============ FEATURES ============ -->
+<section class="block" id="features">
+  <div class="sec-head">
+    <h3>Everything you need to sharpen a prompt</h3>
+    <p>Battle-tested instruction phrases that reliably raise answer quality — without shipping your text off to another AI to be rewritten.</p>
+  </div>
+  <div class="features">
+    <div class="card"><div class="ico">⌨️</div><h4>One tap or one hotkey</h4><p>Insert from the popup, or fire your top four phrases with <b>Alt+Shift+1–4</b> without leaving the keyboard.</p></div>
+    <div class="card"><div class="ico">↕️</div><h4>Beginning or end</h4><p>Drop a phrase at the top of your prompt or tack it on at the end — each one lands on its own line.</p></div>
+    <div class="card"><div class="ico">✳️</div><h4>22 proven phrases</h4><p>A curated starter set spanning accuracy, reasoning, verification, brevity, and formatting — every one editable.</p></div>
+    <div class="card"><div class="ico">✏️</div><h4>Make it yours</h4><p>Add, edit, reorder, and label your own phrases in a built-in editor. Import/export as JSON to back up or share.</p></div>
+    <div class="card"><div class="ico">🌐</div><h4>Built for the big LLMs</h4><p>Works on Claude, ChatGPT, Gemini, Copilot, and Perplexity — plus Grok, DeepSeek, Mistral, and Poe.</p></div>
+    <div class="card"><div class="ico">🔒</div><h4>Private by design</h4><p>No account, no servers, no AI calls. Your phrases sync across your own Chrome profile and go nowhere else.</p></div>
+  </div>
+</section>
+
+<!-- ============ SITES ============ -->
+<section class="block" id="sites" style="padding-top:0">
+  <div class="sec-head">
+    <h3>Works where you already chat</h3>
+    <p>Active on the major AI chat sites — insertion works in plain text boxes and rich editors alike.</p>
+  </div>
+  <div class="sites-full">
+    <span class="s"><span class="d" style="background:#d97757">C</span> Claude</span>
+    <span class="s"><span class="d" style="background:#10a37f">G</span> ChatGPT</span>
+    <span class="s"><span class="d" style="background:#4285f4">✦</span> Gemini</span>
+    <span class="s"><span class="d" style="background:#0a7cff">◆</span> Copilot</span>
+    <span class="s"><span class="d" style="background:#20808d">P</span> Perplexity</span>
+    <span class="s"><span class="d" style="background:#111">✕</span> Grok</span>
+    <span class="s"><span class="d" style="background:#4d6bfe">D</span> DeepSeek</span>
+    <span class="s"><span class="d" style="background:#fa520f">M</span> Mistral</span>
+    <span class="s"><span class="d" style="background:#5a3fd6">P</span> Poe</span>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="block" id="how" style="padding-top:0">
+  <div class="sec-head"><h3>Up and running in 60 seconds</h3></div>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><h4>Add to Chrome</h4><p>Install from the Chrome Web Store — one click, no sign-up.</p></div>
+    <div class="step"><div class="n">2</div><h4>Open any AI chat</h4><p>Click into the message box on Claude, ChatGPT, Gemini, and more.</p></div>
+    <div class="step"><div class="n">3</div><h4>Tap or hit a hotkey</h4><p>Insert a phrase from the popup, or press Alt+Shift+1–4. Done.</p></div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<div class="cta">
+  <div class="inner">
+    <h3>Stop retyping the same instructions.</h3>
+    <p>Sharpen every prompt in a keystroke. Free, private, and yours to customize.</p>
+    <a class="btn primary cta-link" href="#" target="_blank" rel="noopener"><span class="chrome"></span> Add to Chrome</a>
+  </div>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site">
+  <div class="foot">
+    <a class="brand" href="#top" style="font-size:16px">
+      <span class="logo" style="width:30px;height:30px;border-radius:9px"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></span>
+      Prompt Sharpener
+    </a>
+    <div class="spacer"></div>
+    <span>v1.0.1 · by Bradley P Coleman</span>
+    <a class="cta-link" href="#" target="_blank" rel="noopener">View on Chrome Web Store →</a>
+    <p class="fine">Prompt Sharpener is an independent extension and is not affiliated with, endorsed by, or sponsored by Google, Anthropic, OpenAI, Microsoft, or any other company named here. Product names and logos are trademarks of their respective owners.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var STORE_URL = "https://chromewebstore.google.com/detail/jnejhnjaincdikhfniljodbefnlbjmop";
+  // Point every "Add to Chrome" / store link at the listing.
+  document.querySelectorAll('#cta-nav, .cta-link').forEach(function(a){ a.href = STORE_URL; });
+
+  // ---- Carousel ----
+  var track = document.getElementById('track');
+  var panels = track.children;
+  var total = panels.length;
+  var dotsWrap = document.getElementById('dots');
+  var idx = 0, timer = null;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  for (var i=0;i<total;i++){
+    var d = document.createElement('button');
+    d.className = 'dot' + (i===0?' active':'');
+    d.setAttribute('aria-label','Go to slide '+(i+1));
+    (function(n){ d.addEventListener('click', function(){ go(n); reset(); }); })(i);
+    dotsWrap.appendChild(d);
+  }
+  var dots = dotsWrap.children;
+
+  function go(n){
+    idx = (n + total) % total;
+    track.style.transform = 'translateX(' + (-idx*100) + '%)';
+    for (var i=0;i<dots.length;i++) dots[i].className = 'dot' + (i===idx?' active':'');
+  }
+  function next(){ go(idx+1); }
+  function prev(){ go(idx-1); }
+  function start(){ if(reduce) return; timer = setInterval(next, 5500); }
+  function stop(){ if(timer){ clearInterval(timer); timer=null; } }
+  function reset(){ stop(); start(); }
+
+  document.getElementById('next').addEventListener('click', function(){ next(); reset(); });
+  document.getElementById('prev').addEventListener('click', function(){ prev(); reset(); });
+
+  var stage = document.getElementById('stage');
+  stage.addEventListener('mouseenter', stop);
+  stage.addEventListener('mouseleave', start);
+  stage.addEventListener('focusin', stop);
+  stage.addEventListener('focusout', start);
+
+  // keyboard
+  document.addEventListener('keydown', function(e){
+    if(e.key==='ArrowRight'){ next(); reset(); }
+    else if(e.key==='ArrowLeft'){ prev(); reset(); }
+  });
+
+  // touch swipe
+  var x0=null;
+  stage.addEventListener('touchstart', function(e){ x0 = e.touches[0].clientX; stop(); }, {passive:true});
+  stage.addEventListener('touchend', function(e){
+    if(x0===null) return;
+    var dx = e.changedTouches[0].clientX - x0;
+    if(Math.abs(dx)>40){ dx<0 ? next() : prev(); }
+    x0=null; start();
+  });
+
+  // pause when tab hidden
+  document.addEventListener('visibilitychange', function(){ document.hidden ? stop() : start(); });
+
+  start();
+})();
+</script>
+</body>
+</html>
